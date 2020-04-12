@@ -22,13 +22,13 @@ from .klvdata import KLVData
 
 
 class Parser:
-    def __init__(self, config):
+    def __init__(self, config, file):
         self.config = config
         self.ffmtools = FFMpegTools(self.config)
 
         # map some handy shortcuts
         self.verbose = config.verbose
-        self.file = config.file
+        self.file = file
         self.outputfile = config.outputfile
 
 

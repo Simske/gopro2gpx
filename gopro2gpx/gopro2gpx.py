@@ -126,8 +126,8 @@ def parseArgs():
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="count")
     parser.add_argument("-b", "--binary", help="read data from bin file", action="store_true")
     parser.add_argument("-s", "--skip", help="Skip bad points (GPSFIX=0)", action="store_true", default=False)
-    parser.add_argument("file", help="Video file or binary metadata dump")
-    parser.add_argument("outputfile", help="output file. builds KML and GPX")
+    parser.add_argument("files", nargs="*", help="Video files or binary metadata dumps")
+    parser.add_argument("outputfile", help="output file. builds KML and GPX. Will be concatenated from all inputs")
     args = parser.parse_args()
 
     return args
@@ -135,17 +135,21 @@ def parseArgs():
 def main():
     args = parseArgs()
     config = setup_environment(args)
-    parser = gpmf.Parser(config)
 
-    if not args.binary:
-        data = parser.readFromMP4()
-    else:
-        data = parser.readFromBinary()
+    # point collector
+    points = []
 
-    # build some funky tracks from camera GPS
+    # read data from each file
+    for filename in args.files:
+        parser = gpmf.Parser(config, filename)
 
-    print(args.skip)
-    points = BuildGPSPoints(data, skip=args.skip)
+        if not args.binary:
+            data = parser.readFromMP4()
+        else:
+            data = parser.readFromBinary()
+
+        # append to track
+        points.extend(BuildGPSPoints(data, skip=args.skip))
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exitting" % args.file)

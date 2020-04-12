@@ -48,7 +48,6 @@ def setup_environment(args):
 
     # configure CLI arguments
     config.verbose = args.verbose
-    config.file = args.file
     config.outputfile = args.outputfile
     return config
 
