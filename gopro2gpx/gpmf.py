@@ -31,7 +31,6 @@ class Parser:
         self.file = config.file
         self.outputfile = config.outputfile
 
-
     def readFromMP4(self):
         """read data the metadata track from video. Requires FFMPEG wrapper.
            -vv creates a dump file with the  binary data called dump_track.bin
@@ -45,18 +44,22 @@ class Parser:
             raise Exception("File %s doesn't have any metadata" % self.file)
 
         if self.verbose:
-            print("Working on file %s track %s (%s)" % (self.file, track_number, lineinfo))
+            print(
+                "Working on file %s track %s (%s)" % (self.file, track_number, lineinfo)
+            )
         metadata_raw = self.ffmtools.getMetadata(track_number, self.file)
 
         if self.verbose == 2:
-            print("Creating output file for binary data (fromMP4): %s" % self.outputfile)
+            print(
+                "Creating output file for binary data (fromMP4): %s" % self.outputfile
+            )
             f = open("%s.bin" % self.outputfile, "wb")
             f.write(metadata_raw)
             f.close()
 
         # process the data here
         metadata = self.parseStream(metadata_raw)
-        return(metadata)
+        return metadata
 
     def readFromBinary(self):
         """read data from binary file, instead extract the metadata track from video. Useful for quick development
@@ -68,12 +71,15 @@ class Parser:
         if self.verbose:
             print("Reading binary file %s" % (self.file))
 
-        fd = open(self.file, 'rb')
+        fd = open(self.file, "rb")
         data = fd.read()
         fd.close()
 
         if self.verbose == 2:
-            print("Creating output file for binary data (from binary): %s" % self.outputfile)
+            print(
+                "Creating output file for binary data (from binary): %s"
+                % self.outputfile
+            )
             f = open("%s.raw" % self.outputfile, "wb")
             f.write(data)
             f.close()
@@ -86,7 +92,7 @@ class Parser:
         """
         main code that reads the points
         """
-        data = array.array('b')
+        data = array.array("b")
         data.fromstring(data_raw)
 
         offset = 0
@@ -94,21 +100,21 @@ class Parser:
 
         while offset < len(data):
 
-            klv = KLVData(data,offset)
+            klv = KLVData(data, offset)
             if not klv.skip():
                 klvlist.append(klv)
                 if self.verbose == 3:
                     print(klv)
             else:
-                if klv: 
+                if klv:
                     print("Warning, skipping klv", klv)
                 else:
                     # unknown label
                     pass
-                    
+
             offset += 8
             if klv.type != 0:
                 offset += klv.padded_length
-                #print(">offset:%d length:%d padded:%d" % (offset, length, padded_length))
+                # print(">offset:%d length:%d padded:%d" % (offset, length, padded_length))
 
-        return(klvlist)
+        return klvlist

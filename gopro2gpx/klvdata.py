@@ -16,12 +16,15 @@ class KLVData:
     format: Header: 32-bit, 8-bit, 8-bit, 16-bit
             Data: 32-bit aligned, padded with 0
     """
-    binary_format = '>4sBBH'
+
+    binary_format = ">4sBBH"
 
     def __init__(self, data, offset):
 
-        s  = struct.Struct(KLVData.binary_format) # unsigned bytes!
-        self.fourCC, self.type, self.size, self.repeat = s.unpack_from(data, offset=offset)
+        s = struct.Struct(KLVData.binary_format)  # unsigned bytes!
+        self.fourCC, self.type, self.size, self.repeat = s.unpack_from(
+            data, offset=offset
+        )
         self.fourCC = self.fourCC.decode()
 
         self.type = int(self.type)
@@ -33,34 +36,40 @@ class KLVData:
         # process the label, if found
         self.data = fourCC.Manage(self)
 
-
     def __str__(self):
 
         stype = chr(self.type)
         if self.type == 0:
-            stype = 'null'
+            stype = "null"
 
         if self.rawdata:
             rawdata = self.rawdata
-            rawdata = ' '.join(format(x, '02x') for x in rawdata)
+            rawdata = " ".join(format(x, "02x") for x in rawdata)
             rawdatas = self.rawdata[0:10]
         else:
-            rawdata = 'null'
-            rawdatas = 'null'
+            rawdata = "null"
+            rawdatas = "null"
 
-        s = "fourCC=%s type=%s size=%d repeat=%s data={%s} raws=|%s| raw=[%s]" % (self.fourCC, stype, self.size, self.repeat, self.data, rawdatas, rawdata)
-        return(s)
+        s = "fourCC=%s type=%s size=%d repeat=%s data={%s} raws=|%s| raw=[%s]" % (
+            self.fourCC,
+            stype,
+            self.size,
+            self.repeat,
+            self.data,
+            rawdatas,
+            rawdata,
+        )
+        return s
 
-    def pad(self,n, base=4):
+    def pad(self, n, base=4):
         "padd the number so is % base == 0"
         i = n
-        while i%base != 0:
-            i+=1
+        while i % base != 0:
+            i += 1
         return i
 
     def skip(self):
         return self.fourCC in fourCC.skip_labels
-
 
     def readRawData(self, data, offset):
         "read the raw data, don't process anything, just get the bytes"
@@ -72,8 +81,8 @@ class KLVData:
             # empty package.
             rawdata = None
         else:
-            fmt = '>' + str(num_bytes) + 's'
-            s  = struct.Struct(fmt)
-            rawdata, = s.unpack_from(data, offset=offset+8)
+            fmt = ">" + str(num_bytes) + "s"
+            s = struct.Struct(fmt)
+            (rawdata,) = s.unpack_from(data, offset=offset + 8)
 
-        return(rawdata)
+        return rawdata

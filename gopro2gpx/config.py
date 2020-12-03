@@ -11,10 +11,12 @@ import configparser
 import platform
 import sys
 
+
 class Config:
     def __init__(self, ffmpeg, ffprobe):
         self.ffmpeg_cmd = ffmpeg
         self.ffprobe_cmd = ffprobe
+
 
 def setup_environment(args):
     """
@@ -22,12 +24,12 @@ def setup_environment(args):
     First check for config file, if it doesn't exist ffmpeg is assumed to be installed
     somewhere in PATH
     """
-    windows = platform.system() == 'Windows'
+    windows = platform.system() == "Windows"
     # find config path depending on OS
     if windows:
         config_path = os.path.expandvars(r"%APPDATA%\gopro2gpx\gopro2gpx.conf")
     else:
-        if os.environ.get('XDG_CONFIG_HOME', False):
+        if os.environ.get("XDG_CONFIG_HOME", False):
             config_path = os.path.expandvars("$XDG_CONFIG_HOME/gopro2gpx.conf")
         else:
             config_path = os.path.expandvars("$HOME/.config/gopro2gpx.conf")
@@ -51,5 +53,3 @@ def setup_environment(args):
     config.file = args.file
     config.outputfile = args.outputfile
     return config
-
-
