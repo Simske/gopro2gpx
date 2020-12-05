@@ -7,10 +7,10 @@
 #
 
 
-import struct
-import time
 import collections
 import copy
+import struct
+import time
 
 maptype = {
     "c": "c",

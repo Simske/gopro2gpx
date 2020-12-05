@@ -20,10 +20,8 @@ import time
 from collections import namedtuple
 from datetime import datetime
 
+from . import fourCC, gpmf, gpshelper
 from .config import setup_environment
-from . import fourCC
-from . import gpmf
-from . import gpshelper
 
 
 def BuildGPSPoints(data, skip=False):

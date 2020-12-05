@@ -6,8 +6,8 @@
 # Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
 #
 
-import os
 import configparser
+import os
 import platform
 import sys
 
