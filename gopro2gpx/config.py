@@ -9,13 +9,22 @@
 import configparser
 import os
 import platform
-import sys
 
 
 class Config:
+    # pylint: disable=too-few-public-methods
     def __init__(self, ffmpeg, ffprobe):
         self.ffmpeg_cmd = ffmpeg
         self.ffprobe_cmd = ffprobe
+
+        self.verbose = False
+        self.inputfile = None
+        self.outputfile = None
+
+    def set_cli_options(self, verbose, inputfile, outputfile):
+        self.verbose = verbose
+        self.inputfile = inputfile
+        self.outputfile = outputfile
 
 
 def setup_environment(args):
@@ -49,7 +58,6 @@ def setup_environment(args):
     config = Config(ffmpeg, ffprobe)
 
     # configure CLI arguments
-    config.verbose = args.verbose
-    config.file = args.file
-    config.outputfile = args.outputfile
+    config.set_cli_options(args.verbose, args.file, args.outputfile)
+
     return config

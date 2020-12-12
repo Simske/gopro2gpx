@@ -17,14 +17,18 @@ class KLVData:
             Data: 32-bit aligned, padded with 0
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     binary_format = ">4sBBH"
 
     def __init__(self, data, offset):
-
-        s = struct.Struct(KLVData.binary_format)  # unsigned bytes!
-        self.fourCC, self.type, self.size, self.repeat = s.unpack_from(
-            data, offset=offset
-        )
+        binary_struct = struct.Struct(KLVData.binary_format)  # unsigned bytes!
+        (
+            self.fourCC,  # pylint: disable=invalid-name
+            self.type,
+            self.size,
+            self.repeat,
+        ) = binary_struct.unpack_from(data, offset=offset)
         self.fourCC = self.fourCC.decode()
 
         self.type = int(self.type)
@@ -32,9 +36,9 @@ class KLVData:
         self.padded_length = self.pad(self.length)
 
         # read now the data, in raw format
-        self.rawdata = self.readRawData(data, offset)
+        self.rawdata = self.read_raw_data(data, offset)
         # process the label, if found
-        self.data = fourCC.Manage(self)
+        self.data = fourCC.manage(self)
 
     def __str__(self):
 
@@ -50,7 +54,7 @@ class KLVData:
             rawdata = "null"
             rawdatas = "null"
 
-        s = "fourCC=%s type=%s size=%d repeat=%s data={%s} raws=|%s| raw=[%s]" % (
+        return "fourCC=%s type=%s size=%d repeat=%s data={%s} raws=|%s| raw=[%s]" % (
             self.fourCC,
             stype,
             self.size,
@@ -59,30 +63,27 @@ class KLVData:
             rawdatas,
             rawdata,
         )
-        return s
 
-    def pad(self, n, base=4):
+    @staticmethod
+    def pad(n, base=4):  # pylint: disable=invalid-name
         "padd the number so is % base == 0"
-        i = n
-        while i % base != 0:
-            i += 1
-        return i
+        if n % base == 0:
+            return n
+        return n + base - n % base
 
     def skip(self):
         return self.fourCC in fourCC.skip_labels
 
-    def readRawData(self, data, offset):
+    def read_raw_data(self, data, offset):
         "read the raw data, don't process anything, just get the bytes"
         if self.type == 0:
-            return
+            return None
 
         num_bytes = self.pad(self.size * self.repeat)
         if num_bytes == 0:
             # empty package.
-            rawdata = None
-        else:
-            fmt = ">" + str(num_bytes) + "s"
-            s = struct.Struct(fmt)
-            (rawdata,) = s.unpack_from(data, offset=offset + 8)
+            return None
 
+        fmt = ">" + str(num_bytes) + "s"
+        (rawdata,) = struct.Struct(fmt).unpack_from(data, offset=offset + 8)
         return rawdata

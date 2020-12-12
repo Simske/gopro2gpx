@@ -9,22 +9,15 @@
 
 
 import argparse
-import array
-import os
-import platform
-import re
-import struct
-import subprocess
 import sys
 import time
-from collections import namedtuple
 from datetime import datetime
 
 from . import fourCC, gpmf, gpshelper
 from .config import setup_environment
 
 
-def BuildGPSPoints(data, skip=False):
+def build_gps_points(data, skip=False):
     """
     Data comes UNSCALED so we have to do: Data / Scale.
     Do a finite state machine to process the labels.
@@ -34,28 +27,29 @@ def BuildGPSPoints(data, skip=False):
      - GPSU     GPS Time
      - GPS5     GPS Data
     """
+    # pylint: disable=too-many-branches,too-many-statements
 
     points = []
-    SCAL = fourCC.XYZData(1.0, 1.0, 1.0)
-    GPSU = None
-    SYST = fourCC.SYSTData(0, 0)
+    scale = fourCC.XYZData(1.0, 1.0, 1.0)
+    gps_time = None
+    syst = fourCC.SYSTData(0, 0)
 
     stats = {"ok": 0, "badfix": 0, "badfixskip": 0, "empty": 0}
 
-    GPSFIX = 0  # no lock.
-    for d in data:
+    gps_fix = 0  # no lock.
+    for d in data:  # pylint: disable=invalid-name
 
         if d.fourCC == "SCAL":
-            SCAL = d.data
+            scale = d.data
         elif d.fourCC == "GPSU":
-            GPSU = d.data
+            gps_time = d.data
         elif d.fourCC == "GPSF":
-            if d.data != GPSFIX:
+            if d.data != gps_fix:
                 print(
                     "GPSFIX change to %s [%s]"
                     % (d.data, fourCC.LabelGPSF.xlate[d.data])
                 )
-            GPSFIX = d.data
+            gps_fix = d.data
         elif d.fourCC == "GPS5":
             # we have to use the REPEAT value.
 
@@ -66,7 +60,7 @@ def BuildGPSPoints(data, skip=False):
                     stats["empty"] += 1
                     continue
 
-                if GPSFIX == 0:
+                if gps_fix == 0:
                     stats["badfix"] += 1
                     if skip:
                         print("Warning: Skipping point due GPSFIX==0")
@@ -75,27 +69,28 @@ def BuildGPSPoints(data, skip=False):
 
                 retdata = [
                     float(x) / float(y)
-                    for x, y in zip(item._asdict().values(), list(SCAL))
+                    for x, y in zip(item._asdict().values(), list(scale))
                 ]
 
                 gpsdata = fourCC.GPSData._make(retdata)
-                p = gpshelper.GPSPoint(
-                    gpsdata.lat,
-                    gpsdata.lon,
-                    gpsdata.alt,
-                    datetime.fromtimestamp(time.mktime(GPSU)),
-                    gpsdata.speed,
+                points.append(
+                    gpshelper.GPSPoint(
+                        gpsdata.lat,
+                        gpsdata.lon,
+                        gpsdata.alt,
+                        datetime.fromtimestamp(time.mktime(gps_time)),
+                        gpsdata.speed,
+                    )
                 )
-                points.append(p)
                 stats["ok"] += 1
 
         elif d.fourCC == "SYST":
             data = [
                 float(x) / float(y)
-                for x, y in zip(d.data._asdict().values(), list(SCAL))
+                for x, y in zip(d.data._asdict().values(), list(scale))
             ]
             if data[0] != 0 and data[1] != 0:
-                SYST = fourCC.SYSTData._make(data)
+                syst = fourCC.SYSTData._make(data)
 
         elif d.fourCC == "GPRI":
             # KARMA GPRI info
@@ -105,7 +100,7 @@ def BuildGPSPoints(data, skip=False):
                 stats["empty"] += 1
                 continue
 
-            if GPSFIX == 0:
+            if gps_fix == 0:
                 stats["badfix"] += 1
                 if skip:
                     print("Warning: Skipping point due GPSFIX==0")
@@ -114,24 +109,25 @@ def BuildGPSPoints(data, skip=False):
 
             data = [
                 float(x) / float(y)
-                for x, y in zip(d.data._asdict().values(), list(SCAL))
+                for x, y in zip(d.data._asdict().values(), list(scale))
             ]
             gpsdata = fourCC.KARMAGPSData._make(data)
 
-            if SYST.seconds != 0 and SYST.miliseconds != 0:
-                p = gpshelper.GPSPoint(
-                    gpsdata.lat,
-                    gpsdata.lon,
-                    gpsdata.alt,
-                    datetime.fromtimestamp(SYST.miliseconds),
-                    gpsdata.speed,
+            if syst.seconds != 0 and syst.miliseconds != 0:
+                points.append(
+                    gpshelper.GPSPoint(
+                        gpsdata.lat,
+                        gpsdata.lon,
+                        gpsdata.alt,
+                        datetime.fromtimestamp(syst.miliseconds),
+                        gpsdata.speed,
+                    )
                 )
-                points.append(p)
                 stats["ok"] += 1
 
     print("-- stats -----------------")
     total_points = 0
-    for i in stats.keys():
+    for i in stats:
         total_points += stats[i]
     print("- Ok:              %5d" % stats["ok"])
     print(
@@ -143,7 +139,7 @@ def BuildGPSPoints(data, skip=False):
     return points
 
 
-def parseArgs():
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="count"
@@ -166,30 +162,30 @@ def parseArgs():
 
 
 def main():
-    args = parseArgs()
+    args = parse_args()
     config = setup_environment(args)
     parser = gpmf.Parser(config)
 
     if not args.binary:
-        data = parser.readFromMP4()
+        data = parser.read_from_mp4()
     else:
-        data = parser.readFromBinary()
+        data = parser.read_from_binary()
 
     # build some funky tracks from camera GPS
 
-    points = BuildGPSPoints(data, skip=args.skip)
+    points = build_gps_points(data, skip=args.skip)
 
     if len(points) == 0:
         print("Can't create file. No GPS info in %s. Exitting" % args.file)
         sys.exit(0)
 
-    kml = gpshelper.generate_KML(points)
-    with open("%s.kml" % args.outputfile, "w+") as fd:
-        fd.write(kml)
+    kml = gpshelper.generate_kml(points)
+    with open("%s.kml" % args.outputfile, "w+") as kml_file:
+        kml_file.write(kml)
 
-    gpx = gpshelper.generate_GPX(points, trk_name="gopro7-track")
-    with open("%s.gpx" % args.outputfile, "w+") as fd:
-        fd.write(gpx)
+    gpx = gpshelper.generate_gpx(points, trk_name="gopro7-track")
+    with open("%s.gpx" % args.outputfile, "w+") as gpx_file:
+        gpx_file.write(gpx)
 
 
 if __name__ == "__main__":

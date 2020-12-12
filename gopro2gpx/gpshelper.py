@@ -13,21 +13,22 @@ from datetime import datetime
 
 
 class GPSPoint:
+    # pylint: disable=too-many-instance-attributes,too-few-public-methods
     def __init__(
         self,
         latitude=0.0,
         longitude=0.0,
         elevation=0.0,
-        time=datetime.fromtimestamp(time.time()),
+        timestamp=datetime.fromtimestamp(time.time()),
         speed=0.0,
-    ):
+    ):  # pylint: disable=too-many-arguments
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
-        self.time = time
+        self.time = timestamp
         self.speed = speed
         # extensions
-        self.hr = 0
+        self.heartrate = 0
         self.cad = 0
         self.cadence = 0
         self.temperature = 0
@@ -38,7 +39,7 @@ class GPSPoint:
         self.left_torque_effectiveness = 0
 
 
-def UTCTime(timedata):
+def iso_timestamp(timedata):
     #
     # time comes: 2014-05-30 20:11:27
     # should be formatted to 2014-05-30T20:11:17Z
@@ -47,7 +48,7 @@ def UTCTime(timedata):
     return timedata.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def generate_GPX(points, trk_name="exercise"):
+def generate_gpx(points, trk_name="exercise"):
 
     """
     Creates a GPX in 1.1 Format
@@ -72,7 +73,34 @@ def generate_GPX(points, trk_name="exercise"):
         'xmlns:vidx1="http://www.garmin.com/xmlschemas/VideoExtension/v1"',
         'creator="Garmin Desktop App"',
         'version="1.1"',
-        'xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/WaypointExtension/v1 http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v2 http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/ActivityExtension/v1 http://www8.garmin.com/xmlschemas/ActivityExtensionv1.xsd http://www.garmin.com/xmlschemas/AdventuresExtensions/v1 http://www8.garmin.com/xmlschemas/AdventuresExtensionv1.xsd http://www.garmin.com/xmlschemas/PressureExtension/v1 http://www.garmin.com/xmlschemas/PressureExtensionv1.xsd http://www.garmin.com/xmlschemas/TripExtensions/v1 http://www.garmin.com/xmlschemas/TripExtensionsv1.xsd http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1 http://www.garmin.com/xmlschemas/TripMetaDataExtensionsv1.xsd http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1 http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensionsv1.xsd http://www.garmin.com/xmlschemas/CreationTimeExtension/v1 http://www.garmin.com/xmlschemas/CreationTimeExtensionsv1.xsd http://www.garmin.com/xmlschemas/AccelerationExtension/v1 http://www.garmin.com/xmlschemas/AccelerationExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.garmin.com/xmlschemas/VideoExtension/v1 http://www.garmin.com/xmlschemas/VideoExtensionv1.xsd"',
+        'xsi:schemaLocation="http://www.topografix.com/GPX/1/1'
+        "http://www.topografix.com/GPX/1/1/gpx.xsd"
+        "http://www.garmin.com/xmlschemas/WaypointExtension/v1"
+        "http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/TrackPointExtension/v2"
+        "http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd"
+        "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
+        "http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd"
+        "http://www.garmin.com/xmlschemas/ActivityExtension/v1"
+        "http://www8.garmin.com/xmlschemas/ActivityExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/AdventuresExtensions/v1"
+        "http://www8.garmin.com/xmlschemas/AdventuresExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/PressureExtension/v1"
+        "http://www.garmin.com/xmlschemas/PressureExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/TripExtensions/v1"
+        "http://www.garmin.com/xmlschemas/TripExtensionsv1.xsd"
+        "http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1"
+        "http://www.garmin.com/xmlschemas/TripMetaDataExtensionsv1.xsd"
+        "http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1"
+        "http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensionsv1.xsd"
+        "http://www.garmin.com/xmlschemas/CreationTimeExtension/v1"
+        "http://www.garmin.com/xmlschemas/CreationTimeExtensionsv1.xsd"
+        "http://www.garmin.com/xmlschemas/AccelerationExtension/v1"
+        "http://www.garmin.com/xmlschemas/AccelerationExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/PowerExtension/v1"
+        "http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd"
+        "http://www.garmin.com/xmlschemas/VideoExtension/v1"
+        'http://www.garmin.com/xmlschemas/VideoExtensionv1.xsd"',
     ]
 
     # BASECAMP:
@@ -84,7 +112,7 @@ def generate_GPX(points, trk_name="exercise"):
     xml += "<gpx " + " ".join(gpx_attr) + ">\r\n"
 
     xml += "<metadata>\r\n"
-    xml += "  <time>%s</time>\r\n" % UTCTime(points[0].time)  # first point !
+    xml += "  <time>%s</time>\r\n" % iso_timestamp(points[0].time)  # first point !
     xml += "</metadata>\r\n"
     xml += "<trk>\r\n"
     xml += "  <name>%s</name>\r\n" % trk_name
@@ -100,18 +128,18 @@ def generate_GPX(points, trk_name="exercise"):
     #    <sat>7</sat>
     #  </trkpt>
 
-    for p in points:
-        hr = p.hr
-        cadence = p.cad
-        speed = p.speed
-        distance = p.distance
+    for point in points:
+        heartrate = point.heartrate
+        cadence = point.cad
+        speed = point.speed
+        distance = point.distance
 
-        pts = '	<trkpt lat="%s" lon="%s">\r\n' % (p.latitude, p.longitude)
-        pts += "		<ele>%s</ele>\r\n" % p.elevation
-        pts += "		<time>%s</time>\r\n" % UTCTime(p.time)
+        pts = '	<trkpt lat="%s" lon="%s">\r\n' % (point.latitude, point.longitude)
+        pts += "		<ele>%s</ele>\r\n" % point.elevation
+        pts += "		<time>%s</time>\r\n" % iso_timestamp(point.time)
         pts += "		<extensions>\r\n"
         pts += "		<gpxtpx:TrackPointExtension>\r\n"
-        pts += "		    <gpxtpx:hr>%s</gpxtpx:hr>\r\n" % hr
+        pts += "		    <gpxtpx:hr>%s</gpxtpx:hr>\r\n" % heartrate
         pts += "		    <gpxtpx:cad>%s</gpxtpx:cad>\r\n" % cadence
         pts += "		    <gpxtpx:speed>%s</gpxtpx:speed>\r\n" % speed
         pts += "		    <gpxtpx:distance>%s</gpxtpx:distance>\r\n" % distance
@@ -131,9 +159,9 @@ def generate_GPX(points, trk_name="exercise"):
     return xml
 
 
-def generate_KML(gps_points):
+def generate_kml(gps_points):
     """
-    
+
     use this for color
     http://www.zonums.com/gmaps/kml_color/
 
@@ -170,10 +198,8 @@ def generate_KML(gps_points):
     """
 
     lines = []
-    for p in gps_points:
-        s = "%s,%s,%s" % (p.longitude, p.latitude, p.elevation)
-        lines.append(s)
+    for point in gps_points:
+        lines.append("%s,%s,%s" % (point.longitude, point.latitude, point.elevation))
 
     coords = os.linesep.join(lines)
-    kml = kml_template % coords
-    return kml
+    return kml_template % coords
